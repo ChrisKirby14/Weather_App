@@ -48,12 +48,12 @@
                                 🌧️ Rain Chance: @day.DailyRainChance%
                             </div>
 
-                            @if (Model.SunTimes != null)
+                            @if (day.SunTimes != null)
                             {
                                 <div class="alert alert-info p-2 mt-2 mb-0 small">
                                     <div class="d-flex justify-content-between">
-                                        <span>🌅 <strong>Rise:</strong> @DateTime.Parse(Model.SunTimes.Sunrise!).ToString("h:mm tt")</span>
-                                        <span>🌇 <strong>Set:</strong> @DateTime.Parse(Model.SunTimes.Sunset!).ToString("h:mm tt")</span>
+                                        <span>🌅 <strong>Rise:</strong> @DateTime.Parse(day.SunTimes.Sunrise!).ToString("h:mm tt")</span>
+                                        <span>🌇 <strong>Set:</strong> @DateTime.Parse(day.SunTimes.Sunset!).ToString("h:mm tt")</span>
                                     </div>
                                 </div>
                             }

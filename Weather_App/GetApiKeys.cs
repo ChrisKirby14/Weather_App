@@ -54,9 +54,12 @@ namespace Weather_App
             };
         }
 
-        public async Task<string> GetSunriseSunSetJsonAsync(WeatherLocation location)
+        public async Task<string> GetSunriseSunsetJsonAsync(WeatherLocation location, string startDate, string endDate)
         {
-            string url = $"https://api.sunrise-sunset.org/json?lat={location.Latitude}&lng={location.Longitude}&formatted=1&tzid={location.Timezone}";
+            string cleanStart = startDate.Split('T')[0];
+            string cleanEnd = endDate.Split('T')[0];
+
+            string url = $"https://api.sunrise-sunset.org/v2?lat={location.Latitude}&lng={location.Longitude}&date_start={cleanStart}&date_end={cleanEnd}&tz={location.Timezone}";
 
             var response = await _httpClient.GetAsync(url);
 

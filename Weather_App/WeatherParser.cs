@@ -7,7 +7,6 @@ namespace Weather_App
     {
         public static List<WeatherForcastViewModel> ParseHourly(string json)
         {
-            // 1. Create a local list to hold our upcoming hours
             var forecasts = new List<WeatherForcastViewModel>();
 
             using var weatherDoc = JsonDocument.Parse(json);
@@ -32,7 +31,6 @@ namespace Weather_App
                 }
             }
 
-            // 3. Return the fully populated list back to OnGetAsync
             return forecasts;
         }
 
@@ -48,7 +46,6 @@ namespace Weather_App
                 var properties = features[0].GetProperty("properties");
                 if (properties.TryGetProperty("timeSeries", out JsonElement timeSeries) && timeSeries.GetArrayLength() > 0)
                 {
-                    // Loop through the 7 days provided by the daily API
                     foreach (var day in timeSeries.EnumerateArray())
                     {
                         // Safely grab the values. If the API misses a day, we default to 0 to prevent a crash.
@@ -71,21 +68,45 @@ namespace Weather_App
             return forecasts;
         }
 
-        public static SunriseSunsetViewModel ParseSunriseSunset(string json)
+        public static void ParseAndAssignSunriseSunset(string json, List<DailyForecastViewModel> forecasts)
         {
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
-            if (root.TryGetProperty("results", out JsonElement results))
+            if (root.TryGetProperty("days", out JsonElement daysArray))
             {
-                return new SunriseSunsetViewModel
+                foreach (var dayElement in daysArray.EnumerateArray())
                 {
-                    Sunrise = results.GetProperty("sunrise").GetString() ?? "",
-                    Sunset = results.GetProperty("sunset").GetString() ?? ""
-                };
-            }
+                    string dateStr = dayElement.GetProperty("date").GetString() ?? "";
 
-            return new SunriseSunsetViewModel();
+                    string rawSunrise = dayElement.GetProperty("sunrise").GetString() ?? "";
+                    string rawSunset = dayElement.GetProperty("sunset").GetString() ?? "";
+
+                    string sunriseTime = ExtractPureTime(rawSunrise);
+                    string sunsetTime = ExtractPureTime(rawSunset);
+
+                    var match = forecasts.FirstOrDefault(f => f.Date != null && f.Date.StartsWith(dateStr));
+                    if (match != null)
+                    {
+                        match.SunTimes = new SunriseSunsetViewModel
+                        {
+                            Sunrise = sunriseTime,
+                            Sunset = sunsetTime
+                        };
+                    }
+                }
+            }
+        }
+
+        private static string ExtractPureTime(string isoString)
+        {
+            if (string.IsNullOrEmpty(isoString)) return string.Empty;
+
+            var parts = isoString.Split('T');
+            if (parts.Length < 2) return isoString;
+
+            var timePart = parts[1].Split(new char[] { '+', '-', 'Z' })[0];
+            return timePart;
         }
     }
 }

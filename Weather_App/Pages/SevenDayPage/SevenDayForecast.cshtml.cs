@@ -32,9 +32,15 @@ namespace Weather_App.Pages.SevenDayPage
 
             Forecasts = await _apiKeys.GetDailyForecastAsync(CurrentLocation);
 
-            string sunriseSunsetJson = await _apiKeys.GetSunriseSunSetJsonAsync(CurrentLocation);
+            if (Forecasts != null && Forecasts.Any())
+            {
+                string startDate = Forecasts.First().Date!;
+                string endDate = Forecasts.Last().Date!;
 
-            SunTimes = WeatherParser.ParseSunriseSunset(sunriseSunsetJson);
+                string sunriseSunsetJson = await _apiKeys.GetSunriseSunsetJsonAsync(CurrentLocation, startDate, endDate);
+
+                WeatherParser.ParseAndAssignSunriseSunset(sunriseSunsetJson, Forecasts);
+            }
         }
     }
 }
