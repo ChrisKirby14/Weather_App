@@ -1,0 +1,94 @@
+﻿@page
+@model IndexModel
+
+<div class="text-center">
+    <h1>Global Weather Search</h1>
+
+    <!-- The Search Form -->
+    <form method="get">
+        <div class="input-group mb-3" style="max-width: 500px; margin: auto;">
+            <input type="text" name="SearchTerm" class="form-control" placeholder="Enter a city (e.g., London)..." value="@Model.SearchTerm" />
+
+            <!-- The new dropdown menu -->
+            <select name="DaysToDisplay" class="form-select" style="max-width: 120px;">
+                <!-- We use razor logic to keep the user's choice selected -->
+                <option value="1" selected="@(Model.DaysToDisplay == 1)">1 Day</option>
+                <option value="2" selected="@(Model.DaysToDisplay == 2)">2 Days</option>
+                <option value="3" selected="@(Model.DaysToDisplay == 3)">3 Days</option>
+            </select>
+
+            <button class="btn btn-primary" type="submit">Search</button>
+        </div>
+    </form>
+
+    <!-- Display Results if Coordinates are Found -->
+    @if (Model.CurrentLocation != null)
+    {
+        <hr />
+        <div class="mt-4">
+            <h3>Location Found: @Model.CurrentLocation.Location</h3>
+            <p><strong>Latitude:</strong> @Model.CurrentLocation.Latitude</p>
+            <p><strong>Longitude:</strong> @Model.CurrentLocation.Longitude</p>
+        </div>
+    }
+    @if (Model.HourlyForecastList != null && Model.HourlyForecastList.Count > 0)
+    {
+        var groupedForecasts = Model.HourlyForecastList
+            .GroupBy(f => DateTime.Parse(f.Time).Date)
+            .Take(Model.DaysToDisplay);
+
+      <div class="mt-5">
+            @foreach (var dayGroup in groupedForecasts)
+            {
+                // Find the matching daily summary for this specific date group
+                var dailyInfo = Model.DailyForecastList?
+                    .FirstOrDefault(d => DateTime.Parse(d.Date).Date == dayGroup.Key);
+
+                <!-- Print the Day Header with Daily Stats -->
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <h3 class="text-primary mb-0">@dayGroup.Key.ToString("dddd, MMMM dd")</h3>
+
+                    @if (dailyInfo != null)
+                    {
+                        <div class="text-muted small">
+                            <span class="me-3"><strong>Highs:</strong> @dailyInfo.MaxUpperTemperature °C</span>
+                            <span class="me-3"><strong>Lows:</strong> @dailyInfo.MinNightTemperature °C</span>
+                            <span class="me-3"><strong>Rain Chance:</strong> @dailyInfo.DailyRainChance %</span>
+                        </div>
+                    } 
+                </div>
+                <hr />
+
+                <!-- Flexbox grid for this specific day's hours -->
+                <div class="d-flex flex-wrap gap-3 mt-3 mb-5">
+                    @foreach (var forecast in dayGroup)
+                    {
+                        <div class="card shadow-sm" style="width: 200px;">
+                            <div class="card-body text-center">
+                                <h5 class="card-title text-dark mb-3">
+                                    @DateTime.Parse(forecast.Time).ToString("h:mm tt")
+                                </h5>
+
+                                <p class="mb-1 small"><strong>Temp:</strong> @forecast.ScreenTemperature °C</p>
+                                <p class="mb-1 small"><strong>Feels Like:</strong> @forecast.FeelsLikeTemperature °C</p>
+
+                                <hr />
+
+                                <p class="mb-0 small"><strong>Rain Chance:</strong> @forecast.RainChance%</p>
+
+                                <hr />
+                                <p class="mb-0 small"><strong>Wind:</strong> @forecast.WindSpeed m/s</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(Model.RawWeatherJson) && Model.RawWeatherJson.StartsWith("Error"))
+    {
+        <div class="alert alert-danger mt-3" style="max-width: 400px; margin: auto;">
+            @Model.RawWeatherJson
+        </div>
+    }
+</div>
