@@ -6,7 +6,7 @@ namespace Weather_App.Pages
 {
     public class IndexModel : PageModel
     {
-        private GetApiKeys _apiKeys;
+        private readonly GetApiKeys _apiKeys;
         
         [BindProperty(SupportsGet=true)]
         public string SearchTerm { get; set; } = string.Empty;
