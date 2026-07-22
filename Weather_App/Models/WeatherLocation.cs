@@ -6,6 +6,7 @@ namespace Weather_App.Models
     {
         public int Id { get; set; }
         public string? Location { get; set; }
+        public string? Timezone { get; set; }
         public double Latitude { get; set; }
         public double Longitude { get; set; }
     }
