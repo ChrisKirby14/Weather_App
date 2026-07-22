@@ -2,7 +2,7 @@
 {
     public class WeatherForcastViewModel
     {
-        public string Time { get; set; } = string.Empty;
+        public string? Time { get; set; }
         public double ScreenTemperature { get; set; }
         public double FeelsLikeTemperature { get; set; }
         public double WindSpeed { get; set; }

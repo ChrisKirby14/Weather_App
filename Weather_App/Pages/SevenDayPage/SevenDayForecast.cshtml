@@ -1,4 +1,66 @@
 ﻿@page
 @model Weather_App.Pages.SevenDayPage.SevenDayForecastModel
 @{
+    ViewData["Title"] = "7-Day Forecast";
 }
+
+<!-- The Search Form -->
+<form method="get">
+    <div class="input-group mb-3" style="max-width: 500px; margin: auto;">
+        <input type="text" name="SearchTerm" class="form-control" placeholder="Enter a city (e.g., London)..." value="@Model.SearchTerm" />
+
+        <button class="btn btn-primary" type="submit">Search</button>
+    </div>
+</form>
+
+<div class="container mt-4">
+    
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>7-Day Forecast for @Model.CurrentLocation?.Location</h2>
+        
+
+        <a asp-page="/Index" asp-route-searchterm="@Model.SearchTerm" class="btn btn-secondary">
+            &larr; Back to Hourly
+        </a>
+    </div>
+
+    @if (Model.Forecasts != null && Model.Forecasts.Any())
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+            @foreach (var day in Model.Forecasts)
+            {
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body text-center">
+                            <h5 class="card-title text-primary">
+                                @DateTime.Parse(day.Date!).ToString("dddd, MMM d")
+                            </h5>
+                            <hr />
+                            <p class="card-text">
+                                <span class="text-danger fw-bold">Max:</span> @day.MaxUpperTemperature&deg;C <br />
+                                <span class="text-primary fw-bold">Min:</span> @day.MinNightTemperature&deg;C
+                            </p>
+                            @{
+                                string rainColourClass = day.DailyRainChance < 25 ? "bg-success" : "bg-primary";
+                            }
+                            <div class="badge @rainColourClass p-2 mt-2 w-100 shadow-sm">
+                                🌧️ Rain Chance: @day.DailyRainChance%
+                            </div>
+
+                            @if (Model.SunTimes != null)
+                            {
+                                <div class="alert alert-info p-2 mt-2 mb-0 small">
+                                    <div class="d-flex justify-content-between">
+                                        <span>🌅 <strong>Rise:</strong> @DateTime.Parse(Model.SunTimes.Sunrise!).ToString("h:mm tt")</span>
+                                        <span>🌇 <strong>Set:</strong> @DateTime.Parse(Model.SunTimes.Sunset!).ToString("h:mm tt")</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

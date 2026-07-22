@@ -14,7 +14,7 @@ namespace Weather_App
             _config = config;
         }
 
-        public async Task<string> FetchWeatherJsonAsync(string url, string configKeyName)
+        private async Task<string> FetchWeatherJsonAsync(string url, string configKeyName)
         {
             var apikey = _config[configKeyName];
 
@@ -49,8 +49,23 @@ namespace Weather_App
             {
                 Location = firstResult.GetProperty("name").GetString(),
                 Latitude = firstResult.GetProperty("latitude").GetDouble(),
-                Longitude = firstResult.GetProperty("longitude").GetDouble()
+                Longitude = firstResult.GetProperty("longitude").GetDouble(),
+                Timezone = firstResult.GetProperty("timezone").GetString() ?? "UTC"
             };
+        }
+
+        public async Task<string> GetSunriseSunSetJsonAsync(WeatherLocation location)
+        {
+            string url = $"https://api.sunrise-sunset.org/json?lat={location.Latitude}&lng={location.Longitude}&formatted=1&tzid={location.Timezone}";
+
+            var response = await _httpClient.GetAsync(url);
+
+            if ( response.IsSuccessStatusCode )
+            {
+                return await response.Content.ReadAsStringAsync() ;
+            }
+
+            return string.Empty;
         }
 
         public async Task<List<WeatherForcastViewModel>> GetHourlyForecastAsync(WeatherLocation location)
@@ -65,14 +80,14 @@ namespace Weather_App
             return WeatherParser.ParseDaily(dailyJson);
         }
 
-        public async Task<string> GetHourlyWeatherJsonAsync(WeatherLocation location)
+        private async Task<string> GetHourlyWeatherJsonAsync(WeatherLocation location)
         {
             string url = $"https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/hourly?latitude={location.Latitude}&longitude={location.Longitude}";
 
             return await FetchWeatherJsonAsync(url, "Weather_Site_Specific:ServiceApiKey");
         }
 
-        public async Task<string> GetDailyWeatherJsonAsync(WeatherLocation location)
+        private async Task<string> GetDailyWeatherJsonAsync(WeatherLocation location)
         {
             string url = $"https://data.hub.api.metoffice.gov.uk/sitespecific/v0/point/daily?latitude={location.Latitude}&longitude={location.Longitude}";
 

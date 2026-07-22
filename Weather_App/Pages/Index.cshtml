@@ -29,12 +29,15 @@
             <h3>Location Found: @Model.CurrentLocation.Location</h3>
             <p><strong>Latitude:</strong> @Model.CurrentLocation.Latitude</p>
             <p><strong>Longitude:</strong> @Model.CurrentLocation.Longitude</p>
+            <a asp-page="/SevenDayPage/SevenDayForecast" asp-route-searchterm="@Model.SearchTerm" class="btn btn-primary px-4 shadow-sm">
+                View 7-Day Forecast
+            </a>
         </div>
     }
     @if (Model.HourlyForecastList != null && Model.HourlyForecastList.Count > 0)
     {
         var groupedForecasts = Model.HourlyForecastList
-            .GroupBy(f => DateTime.Parse(f.Time).Date)
+            .GroupBy(f => DateTime.Parse(f.Time!).Date)
             .Take(Model.DaysToDisplay);
 
       <div class="mt-5">
@@ -42,7 +45,7 @@
             {
                 // Find the matching daily summary for this specific date group
                 var dailyInfo = Model.DailyForecastList?
-                    .FirstOrDefault(d => DateTime.Parse(d.Date).Date == dayGroup.Key);
+                    .FirstOrDefault(d => DateTime.Parse(d.Date!).Date == dayGroup.Key);
 
                 <!-- Print the Day Header with Daily Stats -->
                 <div class="d-flex justify-content-between align-items-center mt-4">
@@ -66,18 +69,24 @@
                         <div class="card shadow-sm" style="width: 200px;">
                             <div class="card-body text-center">
                                 <h5 class="card-title text-dark mb-3">
-                                    @DateTime.Parse(forecast.Time).ToString("h:mm tt")
+                                    @DateTime.Parse(forecast.Time!).ToString("h:mm tt")
                                 </h5>
 
                                 <p class="mb-1 small"><strong>Temp:</strong> @forecast.ScreenTemperature °C</p>
                                 <p class="mb-1 small"><strong>Feels Like:</strong> @forecast.FeelsLikeTemperature °C</p>
 
                                 <hr />
-
-                                <p class="mb-0 small"><strong>Rain Chance:</strong> @forecast.RainChance%</p>
+                                @{
+                                    string rainColourClass = forecast.RainChance < 25 ? "bg-success" : "bg-primary";
+                                }
+                                <div class="badge @rainColourClass p-2 mt-2 w-100 shadow-sm">
+                                    🌧️ Rain Chance: @forecast.RainChance%
+                                </div>
 
                                 <hr />
-                                <p class="mb-0 small"><strong>Wind:</strong> @forecast.WindSpeed m/s</p>
+                                <div class="badge bg-secondary p-2 mt-2 w-100 shadow-sm">
+                                    💨 Wind: @forecast.WindSpeed m/s
+                                </div>
                             </div>
                         </div>
                     }

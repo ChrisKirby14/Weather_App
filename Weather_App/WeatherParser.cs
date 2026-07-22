@@ -71,5 +71,21 @@ namespace Weather_App
             return forecasts;
         }
 
+        public static SunriseSunsetViewModel ParseSunriseSunset(string json)
+        {
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("results", out JsonElement results))
+            {
+                return new SunriseSunsetViewModel
+                {
+                    Sunrise = results.GetProperty("sunrise").GetString() ?? "",
+                    Sunset = results.GetProperty("sunset").GetString() ?? ""
+                };
+            }
+
+            return new SunriseSunsetViewModel();
+        }
     }
 }
