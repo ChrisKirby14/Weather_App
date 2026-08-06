@@ -6,6 +6,7 @@ builder.Services.AddDbContext<Weather_AppContext>(options => options.UseSqlServe
 
 var weatherSSApiKey = builder.Configuration["Weather_Site_Specific:ServiceApiKey"];
 var weatherMapImgApiKey = builder.Configuration["Weather_Map_Images:ServiceApiKey"];
+var weatherMapOrderId = builder.Configuration["Weather_Map_Images:OrderId"];
 var weatherObsApiKey = builder.Configuration["Weather_Observations:ServiceApiKey"];
 
 // Add services to the container.

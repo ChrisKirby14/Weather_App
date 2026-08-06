@@ -29,7 +29,11 @@
             <h3>Location Found: @Model.CurrentLocation.Location</h3>
             <p><strong>Latitude:</strong> @Model.CurrentLocation.Latitude</p>
             <p><strong>Longitude:</strong> @Model.CurrentLocation.Longitude</p>
-            <a asp-page="/SevenDayPage/SevenDayForecast" asp-route-searchterm="@Model.SearchTerm" class="btn btn-primary px-4 shadow-sm">
+
+            <a asp-page="/SevenDayPage/SevenDayForecast"
+               asp-route-searchterm="@Model.SearchTerm"
+               asp-route-daystodisplay="@Model.DaysToDisplay"
+               class="btn btn-primary px-4 shadow-sm">
                 View 7-Day Forecast
             </a>
         </div>
@@ -74,6 +78,24 @@
 
                                 <p class="mb-1 small"><strong>Temp:</strong> @forecast.ScreenTemperature °C</p>
                                 <p class="mb-1 small"><strong>Feels Like:</strong> @forecast.FeelsLikeTemperature °C</p>
+                                @{
+                                    int uvIndex = forecast.UVIndex;
+
+                                    // Returning raw CSS style strings instead of class names
+                                    string uvStyle = uvIndex switch
+                                    {
+                                        <= 2 => "background-color: #28a745; color: white;", // Low (Green)
+                                        <= 5 => "background-color: #ffc107; color: black;", // Moderate (Yellow)
+                                        <= 7 => "background-color: #fd7e14; color: white;", // High (Orange)
+                                        <= 10 => "background-color: #dc3545; color: white;", // Very High (Red)
+                                        _ => "background-color: #6f42c1; color: white;"     // Extreme (Purple)
+                                    };
+                                }
+
+                                <!-- Inject the calculated CSS string into the style attribute -->
+                                <div class="badge" style="@uvStyle">
+                                    <strong>UV Index:</strong> @forecast.UVIndex
+                                </div>
 
                                 <hr />
                                 @{
@@ -86,6 +108,34 @@
                                 <hr />
                                 <div class="badge bg-secondary p-2 mt-2 w-100 shadow-sm">
                                     💨 Wind: @forecast.WindSpeed m/s
+                                </div>
+                                @{
+                                    double windDirection = forecast.WindDirection;
+
+                                    string windPoint = windDirection switch
+                                    {
+                                        >= 348.75 or < 11.25 => "N",
+                                        >= 11.25 and < 33.75 => "NNE",
+                                        >= 33.75 and < 56.25 => "NE",
+                                        >= 56.25 and < 78.75 => "ENE",
+                                        >= 78.75 and < 101.25 => "E",
+                                        >= 101.25 and < 123.75 => "ESE",
+                                        >= 123.75 and < 146.25 => "SE",
+                                        >= 146.25 and < 168.75 => "SSE",
+                                        >= 168.75 and < 191.25 => "S",
+                                        >= 191.25 and < 213.75 => "SSW",
+                                        >= 213.75 and < 236.25 => "SW",
+                                        >= 236.25 and < 258.75 => "WSW",
+                                        >= 258.75 and < 281.25 => "W",
+                                        >= 281.25 and < 303.75 => "WNW",
+                                        >= 303.75 and < 326.25 => "NW",
+                                        >= 326.25 and < 348.75 => "NNW",
+                                        _ => "Unknown"
+                                    };
+                                }
+
+                                <div>
+                                    Wind Direction: @windPoint
                                 </div>
                             </div>
                         </div>
@@ -101,3 +151,53 @@
         </div>
     }
 </div>
+
+    @*
+    <!-- ========================================== -->
+    <!-- NEW REGIONAL MAPS SECTION (ALWAYS VISIBLE) -->
+    <!-- ========================================== -->
+    <hr class="my-5" />
+    <div class="mt-4 mb-5 text-center">
+        <h3 class="mb-4">Regional Weather Maps (UK & Ireland)</h3>
+
+        <!-- One single container for the animation -->
+        <div id="animation-container" class="map-view">
+            <h5 id="frame-counter" class="text-muted fw-bold mb-3">Forecast Hour: +0</h5>
+            <img id="animated-map" alt="Weather Map Animation" class="img-fluid shadow border" style="max-width: 800px; display: none;" />
+        </div>
+    </div>
+</div>
+    <!-- JavaScript to handle the animation loop -->
+<script>
+    const tempFrames = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MapImages?.TemperatureMapUrls ?? new List<string>()));
+
+    let currentFrameIndex = 0;
+
+    // 2. This function loops through the images
+    function renderNextFrame() {
+        if (tempFrames && tempFrames.length > 0) {
+            // Calculate the real future time based on the current frame index
+            const frameTime = new Date();
+            frameTime.setHours(frameTime.getHours() + currentFrameIndex);
+
+            // --- THIS LINE WAS MISSING ---
+            const timeString = frameTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            // -----------------------------
+
+            // Display the image and update the time text
+            document.getElementById('animated-map').src = tempFrames[currentFrameIndex];
+            document.getElementById('animated-map').style.display = 'inline';
+            document.getElementById('frame-counter').innerText = `Forecast Time: ${timeString}`;
+
+            // Move to the next frame. If we hit the end (12), loop back to 0.
+            currentFrameIndex = (currentFrameIndex + 1) % tempFrames.length;
+        } else {
+            // Fallback if the API returns empty data
+            document.getElementById('animated-map').style.display = 'none';
+            document.getElementById('frame-counter').innerText = "Map data currently unavailable.";
+        }
+    }
+
+    renderNextFrame();
+    setInterval(renderNextFrame, 2000);
+</script>*@

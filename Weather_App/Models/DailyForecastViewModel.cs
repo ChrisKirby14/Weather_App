@@ -8,5 +8,6 @@
         public double MaxLowerTemperature { get; set; }
         public double MinNightTemperature { get; set; }
         public double DailyRainChance { get; set; }
+        public int MaxUvIndex { get; set; }
     }
 }

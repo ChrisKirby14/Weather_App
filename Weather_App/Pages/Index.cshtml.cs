@@ -15,6 +15,7 @@ namespace Weather_App.Pages
         public int DaysToDisplay { get; set; } = 7;
 
         public WeatherLocation? CurrentLocation { get; set; }
+        public MapImageViewModel? MapImages { get; set; }
         public List<WeatherForcastViewModel>? HourlyForecastList { get; set; }
         public List<DailyForecastViewModel>? DailyForecastList { get; set; }
 
@@ -27,6 +28,8 @@ namespace Weather_App.Pages
 
         public async Task OnGetAsync()
         {
+            //MapImages = await _apiKeys.GetLatestMapImageUrlAsync();
+
             // 1. If there's no search term, do nothing.
             if (string.IsNullOrEmpty(SearchTerm)) return;
 
@@ -40,7 +43,6 @@ namespace Weather_App.Pages
             DailyForecastList = await _apiKeys.GetDailyForecastAsync(CurrentLocation);
 
             // FUTURE PHASES:
-            // CurrentMap = await GetWeatherMapAsync(CurrentLocation);
             // CurrentObservations = await GetObservationsAsync(CurrentLocation);
         }
     }
