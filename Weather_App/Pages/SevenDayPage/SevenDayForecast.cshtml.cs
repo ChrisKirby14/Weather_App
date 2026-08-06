@@ -14,6 +14,9 @@ namespace Weather_App.Pages.SevenDayPage
         [BindProperty(SupportsGet = true)]
         public string SearchTerm { get; set; } = string.Empty;
 
+        [BindProperty(SupportsGet = true)]
+        public int DaysToDisplay { get; set; } = 3;
+
         public WeatherLocation? CurrentLocation { get; set; }
 
         public SevenDayForecastModel(IConfiguration config)

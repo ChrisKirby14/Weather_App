@@ -15,6 +15,7 @@ namespace Weather_App
             if (weatherRoot.TryGetProperty("features", out JsonElement features) && features.GetArrayLength() > 0)
             {
                 var properties = features[0].GetProperty("properties");
+
                 if (properties.TryGetProperty("timeSeries", out JsonElement timeSeries) && timeSeries.GetArrayLength() > 0)
                 {
                     foreach (var hour in timeSeries.EnumerateArray())
@@ -25,6 +26,8 @@ namespace Weather_App
                             ScreenTemperature = hour.GetProperty("screenTemperature").GetDouble(),
                             FeelsLikeTemperature = hour.GetProperty("feelsLikeTemperature").GetDouble(),
                             WindSpeed = hour.GetProperty("windSpeed10m").GetDouble(),
+                            WindDirection = hour.GetProperty("windDirectionFrom10m").GetDouble(),
+                            UVIndex = hour.GetProperty("uvIndex").GetInt32(),
                             RainChance = hour.TryGetProperty("probOfPrecipitation", out JsonElement rainEl) ? rainEl.GetDouble() : 0
                         });
                     }
@@ -48,18 +51,30 @@ namespace Weather_App
                 {
                     foreach (var day in timeSeries.EnumerateArray())
                     {
+                        string dateString = day.GetProperty("time").GetString() ?? "";
+
+                        if (DateTime.TryParse(dateString, out DateTime parsedDate))
+                        {
+                            if (parsedDate.Date < DateTime.Today)
+                            {
+                                continue;
+                            }
+                        }
+
                         // Safely grab the values. If the API misses a day, we default to 0 to prevent a crash.
                         double maxTemp = day.TryGetProperty("dayMaxScreenTemperature", out JsonElement maxEl) ? maxEl.GetDouble() : 0;
                         double minNightTemp = day.TryGetProperty("nightMinScreenTemperature", out JsonElement minEl) ? minEl.GetDouble() : 0;
                         double dailyRainChance = day.TryGetProperty("dayProbabilityOfRain", out JsonElement rainEL) ? rainEL.GetDouble() : 0;
+                        int maxUvIndex = day.TryGetProperty("maxUvIndex", out JsonElement maxUv) ? maxUv.GetInt32() : 0;
 
 
                         forecasts.Add(new DailyForecastViewModel
                         {
-                            Date = day.GetProperty("time").GetString() ?? "",
+                            Date = dateString,
                             MaxUpperTemperature = maxTemp,
                             MinNightTemperature = minNightTemp,
                             DailyRainChance = dailyRainChance,
+                            MaxUvIndex = maxUvIndex,
                         });
                     }
                 }

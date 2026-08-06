@@ -20,7 +20,11 @@
         <h2>7-Day Forecast for @Model.CurrentLocation?.Location</h2>
         
 
-        <a asp-page="/Index" asp-route-searchterm="@Model.SearchTerm" class="btn btn-secondary">
+        <!-- Update this link on the 7-Day Forecast page -->
+        <a asp-page="/Index"
+           asp-route-searchterm="@Model.SearchTerm"
+           asp-route-daystodisplay="@Model.DaysToDisplay"
+           class="btn btn-secondary">
             &larr; Back to Hourly
         </a>
     </div>
@@ -41,6 +45,25 @@
                                 <span class="text-danger fw-bold">Max:</span> @day.MaxUpperTemperature&deg;C <br />
                                 <span class="text-primary fw-bold">Min:</span> @day.MinNightTemperature&deg;C
                             </p>
+                            @{
+                                int uvIndex = day.MaxUvIndex;
+
+                                // Returning raw CSS style strings instead of class names
+                                string uvStyle = uvIndex switch
+                                {
+                                    <= 2 => "background-color: #28a745; color: white;", // Low (Green)
+                                    <= 5 => "background-color: #ffc107; color: black;", // Moderate (Yellow)
+                                    <= 7 => "background-color: #fd7e14; color: white;", // High (Orange)
+                                    <= 10 => "background-color: #dc3545; color: white;", // Very High (Red)
+                                    _ => "background-color: #6f42c1; color: white;"     // Extreme (Purple)
+                                };
+                            }
+
+                            <!-- Inject the calculated CSS string into the style attribute -->
+                            <div class="badge" style="@uvStyle">
+                                <strong>Max UV:</strong> @day.MaxUvIndex
+                            </div>
+
                             @{
                                 string rainColourClass = day.DailyRainChance < 25 ? "bg-success" : "bg-primary";
                             }
