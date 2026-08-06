@@ -21,9 +21,9 @@ namespace Weather_App.Pages
 
         public string? RawWeatherJson { get; set; }
 
-        public IndexModel(IConfiguration config)
+        public IndexModel(GetApiKeys apiKeys)
         {
-            _apiKeys = new GetApiKeys(config);
+            _apiKeys = apiKeys;
         }
 
         public async Task OnGetAsync()

@@ -19,9 +19,9 @@ namespace Weather_App.Pages.SevenDayPage
 
         public WeatherLocation? CurrentLocation { get; set; }
 
-        public SevenDayForecastModel(IConfiguration config)
+        public SevenDayForecastModel(GetApiKeys apiKeys)
         {
-            _apiKeys = new GetApiKeys(config);
+            _apiKeys = apiKeys;
         }
 
         public async Task OnGetAsync()

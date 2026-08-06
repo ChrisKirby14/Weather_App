@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Weather_App;
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("Weather_AppContext") ?? throw new InvalidOperationException("Connection string 'Weather_AppContext' not found.");
 
@@ -11,6 +12,7 @@ var weatherObsApiKey = builder.Configuration["Weather_Observations:ServiceApiKey
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+builder.Services.AddHttpClient<GetApiKeys>();
 
 var app = builder.Build();
 

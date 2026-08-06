@@ -8,9 +8,9 @@ namespace Weather_App
         private readonly IConfiguration _config;
         private readonly HttpClient _httpClient;
 
-        public GetApiKeys(IConfiguration config)
+        public GetApiKeys(IConfiguration config, HttpClient httpClient)
         {
-            _httpClient = new HttpClient();
+            _httpClient = httpClient;
             _config = config;
         }
 
