@@ -17,7 +17,7 @@ There is also a 7-day forecast, displaying the Max/Min temperatures, possibility
 ---
 
 ## Live Demo
-**URL:** [View Live Application on Azure](https://kirbyweather-f2bnejg9grb7hxe9.ukwest-01.azurewebsites.net)
+**URL:** [Weather App Website on Azure](https://kirbyweather-f2bnejg9grb7hxe9.ukwest-01.azurewebsites.net)
 
 ---
 
