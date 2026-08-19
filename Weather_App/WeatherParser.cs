@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using TimeZoneConverter;
+using System.Text.Json;
 using Weather_App.Models;
 
 namespace Weather_App
@@ -29,25 +30,30 @@ namespace Weather_App
             return result;
         }
 
-        public static List<WeatherForcastViewModel> ParseHourly(string json)
+        public static List<WeatherForcastViewModel> ParseHourly(string json, string timezoneString)
         {
-            var now = DateTimeOffset.Now;
-            var startOfCurrentHour = new DateTimeOffset(now.Year, now.Month, now.Day, now.Hour, 0, 0, now.Offset);
+            TimeZoneInfo cityTimeZone = GetCityTimeZone(timezoneString);
+
+            var currentUtc = DateTimeOffset.UtcNow;
+            var cityNow = TimeZoneInfo.ConvertTime(currentUtc, cityTimeZone);
+            var startOfCurrentHour = new DateTimeOffset(cityNow.Year, cityNow.Month, cityNow.Day, cityNow.Hour, 0, 0, cityNow.Offset);
 
             return ExtractTimeSeries(json, hour =>
             {
                 string timeString = hour.GetProperty("time").GetString() ?? "";
 
-                if (DateTimeOffset.TryParse(timeString, out DateTimeOffset parsedDate))
+                if (DateTimeOffset.TryParse(timeString, out DateTimeOffset parsedUtc))
                 {
-                    if (parsedDate < startOfCurrentHour)
+                    var cityLocalTime = TimeZoneInfo.ConvertTime(parsedUtc, cityTimeZone);
+
+                    if (cityLocalTime < startOfCurrentHour)
                     {
                         return null;
                     }
 
                     return new WeatherForcastViewModel
                     {
-                        Time = parsedDate.ToLocalTime().ToString("yyyy-MM-ddTHH:mm:ss"),
+                        Time = cityLocalTime.ToString("yyyy-MM-ddTHH:mm:ss"),
 
                         ScreenTemperature = hour.GetProperty("screenTemperature").GetDouble(),
                         FeelsLikeTemperature = hour.GetProperty("feelsLikeTemperature").GetDouble(),
@@ -87,7 +93,7 @@ namespace Weather_App
             });
         }
 
-        public static void ParseAndAssignSunriseSunset(string json, List<DailyForecastViewModel> forecasts)
+        public static void ParseAndAssignSunriseSunset(string json, List<DailyForecastViewModel> forecasts, string timezoneString)
         {
             using var doc = JsonDocument.Parse(json);
 
@@ -108,20 +114,45 @@ namespace Weather_App
 
                 match.SunTimes = new SunriseSunsetViewModel
                 {
-                    Sunrise = FormatLocalTime(rawSunrise),
-                    Sunset = FormatLocalTime(rawSunset)
+                    // 2. Pass the timezoneString down to the formatter
+                    Sunrise = FormatLocalTime(rawSunrise, timezoneString),
+                    Sunset = FormatLocalTime(rawSunset, timezoneString)
                 };
             }
         }
 
-        private static string FormatLocalTime(string rawTime)
+        private static string FormatLocalTime(string rawTime, string timezoneString)
         {
             if (DateTimeOffset.TryParse(rawTime, out DateTimeOffset parsedTime))
             {
-                return parsedTime.ToLocalTime().ToString("HH:mm");
+                TimeZoneInfo cityTimeZone;
+                try
+                {
+                    cityTimeZone = TZConvert.GetTimeZoneInfo(timezoneString);
+                }
+                catch
+                {
+                    cityTimeZone = TimeZoneInfo.Utc;
+                }
+
+                var cityLocalTime = TimeZoneInfo.ConvertTime(parsedTime, cityTimeZone);
+
+                return cityLocalTime.ToString("HH:mm");
             }
 
             return rawTime;
+        }
+
+        private static TimeZoneInfo GetCityTimeZone(string timezoneString)
+        {
+            try
+            {
+                return TZConvert.GetTimeZoneInfo(timezoneString);
+            }
+            catch
+            {
+                return TimeZoneInfo.Utc;
+            }
         }
 
     }
