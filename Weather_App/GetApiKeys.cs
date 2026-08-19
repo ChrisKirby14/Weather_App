@@ -93,7 +93,7 @@ namespace Weather_App
         public async Task<List<WeatherForcastViewModel>> GetHourlyForecastAsync(WeatherLocation location)
         {
             string hourlyJson = await GetHourlyWeatherJsonAsync(location);
-            return WeatherParser.ParseHourly(hourlyJson);
+            return WeatherParser.ParseHourly(hourlyJson, location.Timezone ?? "UTC");
         }
 
         public async Task<List<DailyForecastViewModel>> GetDailyForecastAsync(WeatherLocation location)

@@ -42,7 +42,7 @@ namespace Weather_App.Pages.SevenDayPage
 
                 string sunriseSunsetJson = await _apiKeys.GetSunriseSunsetJsonAsync(CurrentLocation, startDate, endDate);
 
-                WeatherParser.ParseAndAssignSunriseSunset(sunriseSunsetJson, Forecasts);
+                WeatherParser.ParseAndAssignSunriseSunset(sunriseSunsetJson, Forecasts, CurrentLocation.Timezone ?? "UTC");
             }
         }
     }
