@@ -5,123 +5,124 @@ namespace Weather_App
 {
     public class WeatherParser
     {
-        public static List<WeatherForcastViewModel> ParseHourly(string json)
+        private static List<T> ExtractTimeSeries<T>(string Json, Func<JsonElement, T?> parseItem) where T : class
         {
-            var forecasts = new List<WeatherForcastViewModel>();
+            var result = new List<T>();
+            using var weatherDoc = JsonDocument.Parse(Json);
+            var root = weatherDoc.RootElement;
 
-            using var weatherDoc = JsonDocument.Parse(json);
-            var weatherRoot = weatherDoc.RootElement;
-
-            if (weatherRoot.TryGetProperty("features", out JsonElement features) && features.GetArrayLength() > 0)
+            if (root.TryGetProperty("features", out JsonElement features) && features.GetArrayLength() > 0)
             {
                 var properties = features[0].GetProperty("properties");
-
-                if (properties.TryGetProperty("timeSeries", out JsonElement timeSeries) && timeSeries.GetArrayLength() > 0)
-                {
-                    foreach (var hour in timeSeries.EnumerateArray())
+                if (properties.TryGetProperty("timeSeries", out var timeSeries))
+                    foreach (var item in timeSeries.EnumerateArray())
                     {
-                        forecasts.Add(new WeatherForcastViewModel
+                        var parsedItem = parseItem(item);
+
+                        if (parsedItem != null)
                         {
-                            Time = hour.GetProperty("time").GetString() ?? "",
-                            ScreenTemperature = hour.GetProperty("screenTemperature").GetDouble(),
-                            FeelsLikeTemperature = hour.GetProperty("feelsLikeTemperature").GetDouble(),
-                            WindSpeed = hour.GetProperty("windSpeed10m").GetDouble(),
-                            WindDirection = hour.GetProperty("windDirectionFrom10m").GetDouble(),
-                            UVIndex = hour.GetProperty("uvIndex").GetInt32(),
-                            RainChance = hour.TryGetProperty("probOfPrecipitation", out JsonElement rainEl) ? rainEl.GetDouble() : 0
-                        });
+                            result.Add(parsedItem);
+                        }
                     }
-                }
             }
 
-            return forecasts;
+            return result;
+        }
+
+        public static List<WeatherForcastViewModel> ParseHourly(string json)
+        {
+            var now = DateTimeOffset.Now;
+            var startOfCurrentHour = new DateTimeOffset(now.Year, now.Month, now.Day, now.Hour, 0, 0, now.Offset);
+
+            return ExtractTimeSeries(json, hour =>
+            {
+                string timeString = hour.GetProperty("time").GetString() ?? "";
+
+                if (DateTimeOffset.TryParse(timeString, out DateTimeOffset parsedDate))
+                {
+                    if (parsedDate < startOfCurrentHour)
+                    {
+                        return null;
+                    }
+
+                    return new WeatherForcastViewModel
+                    {
+                        Time = parsedDate.ToLocalTime().ToString("yyyy-MM-ddTHH:mm:ss"),
+
+                        ScreenTemperature = hour.GetProperty("screenTemperature").GetDouble(),
+                        FeelsLikeTemperature = hour.GetProperty("feelsLikeTemperature").GetDouble(),
+                        WindSpeed = hour.GetProperty("windSpeed10m").GetDouble(),
+                        WindDirection = hour.GetProperty("windDirectionFrom10m").GetDouble(),
+                        UVIndex = hour.GetProperty("uvIndex").GetInt32(),
+                        RainChance = hour.TryGetProperty("probOfPrecipitation", out var rainEl) ? rainEl.GetDouble() : 0
+                    };
+                }
+
+                return null;
+            });
         }
 
         public static List<DailyForecastViewModel> ParseDaily(string json)
         {
-            var forecasts = new List<DailyForecastViewModel>();
-
-            using var weatherDoc = JsonDocument.Parse(json);
-            var weatherRoot = weatherDoc.RootElement;
-
-            if (weatherRoot.TryGetProperty("features", out JsonElement features) && features.GetArrayLength() > 0)
+            return ExtractTimeSeries(json, day =>
             {
-                var properties = features[0].GetProperty("properties");
-                if (properties.TryGetProperty("timeSeries", out JsonElement timeSeries) && timeSeries.GetArrayLength() > 0)
+                string dateString = day.GetProperty("time").GetString() ?? "";
+
+                if (DateTime.TryParse(dateString, out DateTime parsedDate))
                 {
-                    foreach (var day in timeSeries.EnumerateArray())
+                    if (parsedDate.Date < DateTime.Today)
                     {
-                        string dateString = day.GetProperty("time").GetString() ?? "";
-
-                        if (DateTime.TryParse(dateString, out DateTime parsedDate))
-                        {
-                            if (parsedDate.Date < DateTime.Today)
-                            {
-                                continue;
-                            }
-                        }
-
-                        // Safely grab the values. If the API misses a day, we default to 0 to prevent a crash.
-                        double maxTemp = day.TryGetProperty("dayMaxScreenTemperature", out JsonElement maxEl) ? maxEl.GetDouble() : 0;
-                        double minNightTemp = day.TryGetProperty("nightMinScreenTemperature", out JsonElement minEl) ? minEl.GetDouble() : 0;
-                        double dailyRainChance = day.TryGetProperty("dayProbabilityOfRain", out JsonElement rainEL) ? rainEL.GetDouble() : 0;
-                        int maxUvIndex = day.TryGetProperty("maxUvIndex", out JsonElement maxUv) ? maxUv.GetInt32() : 0;
-
-
-                        forecasts.Add(new DailyForecastViewModel
-                        {
-                            Date = dateString,
-                            MaxUpperTemperature = maxTemp,
-                            MinNightTemperature = minNightTemp,
-                            DailyRainChance = dailyRainChance,
-                            MaxUvIndex = maxUvIndex,
-                        });
+                        return null;
                     }
                 }
-            }
 
-            return forecasts;
+                return new DailyForecastViewModel
+                {
+                    Date = dateString,
+                    MaxUpperTemperature = day.TryGetProperty("dayMaxScreenTemperature", out var maxEl) ? maxEl.GetDouble() : 0,
+                    MinNightTemperature = day.TryGetProperty("nightMinScreenTemperature", out var minEl) ? minEl.GetDouble() : 0,
+                    DailyRainChance = day.TryGetProperty("dayProbabilityOfRain", out var rainEl) ? rainEl.GetDouble() : 0,
+                    MaxUvIndex = day.TryGetProperty("maxUvIndex", out var maxUv) ? maxUv.GetInt32() : 0,
+                };
+            });
         }
 
         public static void ParseAndAssignSunriseSunset(string json, List<DailyForecastViewModel> forecasts)
         {
             using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
 
-            if (root.TryGetProperty("days", out JsonElement daysArray))
+            if (!doc.RootElement.TryGetProperty("days", out JsonElement daysArray))
             {
-                foreach (var dayElement in daysArray.EnumerateArray())
+                return;
+            }
+
+            foreach (var dayElement in daysArray.EnumerateArray())
+            {
+                string dateStr = dayElement.GetProperty("date").GetString() ?? "";
+
+                var match = forecasts.FirstOrDefault(f => f.Date != null && f.Date.StartsWith(dateStr));
+                if (match == null) continue;
+
+                string rawSunrise = dayElement.GetProperty("sunrise").GetString() ?? "";
+                string rawSunset = dayElement.GetProperty("sunset").GetString() ?? "";
+
+                match.SunTimes = new SunriseSunsetViewModel
                 {
-                    string dateStr = dayElement.GetProperty("date").GetString() ?? "";
-
-                    string rawSunrise = dayElement.GetProperty("sunrise").GetString() ?? "";
-                    string rawSunset = dayElement.GetProperty("sunset").GetString() ?? "";
-
-                    string sunriseTime = ExtractPureTime(rawSunrise);
-                    string sunsetTime = ExtractPureTime(rawSunset);
-
-                    var match = forecasts.FirstOrDefault(f => f.Date != null && f.Date.StartsWith(dateStr));
-                    if (match != null)
-                    {
-                        match.SunTimes = new SunriseSunsetViewModel
-                        {
-                            Sunrise = sunriseTime,
-                            Sunset = sunsetTime
-                        };
-                    }
-                }
+                    Sunrise = FormatLocalTime(rawSunrise),
+                    Sunset = FormatLocalTime(rawSunset)
+                };
             }
         }
 
-        private static string ExtractPureTime(string isoString)
+        private static string FormatLocalTime(string rawTime)
         {
-            if (string.IsNullOrEmpty(isoString)) return string.Empty;
+            if (DateTimeOffset.TryParse(rawTime, out DateTimeOffset parsedTime))
+            {
+                return parsedTime.ToLocalTime().ToString("HH:mm");
+            }
 
-            var parts = isoString.Split('T');
-            if (parts.Length < 2) return isoString;
-
-            var timePart = parts[1].Split(new char[] { '+', '-', 'Z' })[0];
-            return timePart;
+            return rawTime;
         }
+
     }
 }
