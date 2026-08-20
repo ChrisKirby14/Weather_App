@@ -68,15 +68,19 @@ namespace Weather_App
             });
         }
 
-        public static List<DailyForecastViewModel> ParseDaily(string json)
+        public static List<DailyForecastViewModel> ParseDaily(string json, string timezoneString)
         {
+            var cityTimeZone = GetCityTimeZone(timezoneString);
+            var cityNow = TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, cityTimeZone);
+            var cityToday = cityNow.Date;
+
             return ExtractTimeSeries(json, day =>
             {
                 string dateString = day.GetProperty("time").GetString() ?? "";
 
                 if (DateTime.TryParse(dateString, out DateTime parsedDate))
                 {
-                    if (parsedDate.Date < DateTime.Today)
+                    if (parsedDate.Date < cityToday)
                     {
                         return null;
                     }
@@ -125,19 +129,8 @@ namespace Weather_App
         {
             if (DateTimeOffset.TryParse(rawTime, out DateTimeOffset parsedTime))
             {
-                TimeZoneInfo cityTimeZone;
-                try
-                {
-                    cityTimeZone = TZConvert.GetTimeZoneInfo(timezoneString);
-                }
-                catch
-                {
-                    cityTimeZone = TimeZoneInfo.Utc;
-                }
-
-                var cityLocalTime = TimeZoneInfo.ConvertTime(parsedTime, cityTimeZone);
-
-                return cityLocalTime.ToString("HH:mm");
+                var cityTimeZone = GetCityTimeZone(timezoneString);
+                return TimeZoneInfo.ConvertTime(parsedTime, cityTimeZone).ToString("HH:mm");
             }
 
             return rawTime;
