@@ -25,3 +25,10 @@ There is also a 7-day forecast, displaying the Max/Min temperatures, possibility
 *   **API Integration:** Engineered the backend to securely request and parse live data from external REST APIs.
 *   **Cloud Hosting:** Deployed and hosted the application using Microsoft Azure App Services (Free Tier).
 *   **Web Architecture:** Built using C# and ASP.NET Core Razor Pages, demonstrating a solid understanding of frontend/backend traffic and routing.
+
+---
+
+## 🌍 Global Timezone Architecture & Edge-Case Handling
+* **Timezone Normalisation:** Integrated `TimeZoneConverter` (`TZConvert`) to handle global cities dynamically, converting server-side UTC into accurate local times for hourly forecasts, sunrises, sunsets, and date boundaries.
+* **Defensive Parsing:** Replaced direct JSON property lookups with safe `TryGetProperty` patterns and graceful fallbacks (e.g., defaulting to UTC) to prevent unhandled exceptions on incomplete API payloads.
+* **Boundary Testing:** Validated date-filtering logic against extreme global offsets (such as UTC+14 and negative offset zones) to ensure accurate calendar day rollovers across the International Date Line.
