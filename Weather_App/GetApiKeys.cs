@@ -69,7 +69,7 @@ namespace Weather_App
                 Location = firstResult.GetProperty("name").GetString(),
                 Latitude = firstResult.GetProperty("latitude").GetDouble(),
                 Longitude = firstResult.GetProperty("longitude").GetDouble(),
-                Timezone = firstResult.GetProperty("timezone").GetString() ?? "UTC"
+                Timezone = firstResult.TryGetProperty("timezone", out var tzEl) ? tzEl.GetString() ?? "UTC" : "UTC"
             };
         }
 
@@ -99,7 +99,7 @@ namespace Weather_App
         public async Task<List<DailyForecastViewModel>> GetDailyForecastAsync(WeatherLocation location)
         {
             string dailyJson = await GetDailyWeatherJsonAsync(location);
-            return WeatherParser.ParseDaily(dailyJson);
+            return WeatherParser.ParseDaily(dailyJson, location.Timezone ?? "UTC");
         }
 
         private async Task<string> GetHourlyWeatherJsonAsync(WeatherLocation location)
